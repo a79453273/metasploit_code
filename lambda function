@@ -1,0 +1,33 @@
+## This lambda function downloads metasploit file from website and performs put_object API to S3 bucket collector-metasploit.
+# Import requests library to handle HTTP requests
+
+import json
+import boto3
+import urllib.request
+from datetime import date
+
+
+# Define the URL of the data source
+url = "https://raw.githubusercontent.com/rapid7/metasploit-framework/master/db/modules_metadata_base.json"
+s3_bucket_name = 'collector-metasploit'
+
+def lambda_handler(event, context):
+    output_file = 'metasploit_{}.json'.format(date.today())
+
+# Send a GET request to the URL and store the response object
+    try:
+        response = urllib.request.urlopen(url)
+        data = response.read()
+        
+         # Upload the file to S3
+        s3 = boto3.resource('s3')
+        s3.Bucket(s3_bucket_name).put_object(Key=output_file, Body=data)
+        
+        print("Successfully retrieved content from {} and uploaded {} to S3 bucket: {}.".format(url, output_file, s3_bucket_name))
+    except Exception as e:
+        print("An error occurred: {}".format(e))
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('File upload completed.')
+    }
